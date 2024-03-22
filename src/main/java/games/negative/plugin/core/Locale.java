@@ -1,35 +1,28 @@
 package games.negative.plugin.core;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 import games.negative.alumina.logger.Logs;
+import games.negative.alumina.message.Message;
 import games.negative.plugin.Plugin;
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextReplacementConfig;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 public enum Locale {
 
     ;
 
-    private String content;
+    private final String content;
+    private Message message;
 
     Locale(@NotNull String... defMessage) {
         this.content = String.join("\n", defMessage);
+        this.message = Message.of(content);
     }
 
     public static void init(@NotNull Plugin plugin) {
@@ -50,7 +43,7 @@ public enum Locale {
         if (changed) saveFile(file, config);
 
         for (Locale entry : values()) {
-            entry.content = String.join("\n", config.getStringList(entry.name()));
+            entry.message = new Message(String.join("\n", config.getStringList(entry.name())));
         }
     }
 
@@ -79,38 +72,34 @@ public enum Locale {
     }
 
 
-    public void send(@NotNull CommandSender sender, @Nullable String... placeholders) {
-        MiniMessage mm = MiniMessage.miniMessage();
-
-        Map<String, String> placeholderMap = Maps.newHashMap();
-
-        Component component = mm.deserialize(sender instanceof Player ? PlaceholderAPI.setPlaceholders((Player) sender, content) : PlaceholderAPI.setPlaceholders(null, content));
-        if (placeholders != null) {
-            Preconditions.checkArgument(placeholders.length % 2 == 0, "Placeholders must be in key-value pairs.");
-
-            for (int i = 0; i < placeholders.length; i += 2) {
-                placeholderMap.put(placeholders[i], placeholders[i + 1]);
-            }
-        }
-
-        for (Map.Entry<String, String> entry : placeholderMap.entrySet()) {
-            component = component.replaceText(TextReplacementConfig.builder().matchLiteral(entry.getKey()).replacement(entry.getValue()).build());
-        }
-
-        @SuppressWarnings("all")
-        Audience audience = Plugin.instance().audience().sender(sender);
-
-        audience.sendMessage(component);
+    /**
+     * Sends a message to a specified audience with optional placeholders.
+     *
+     * @param audience     the audience to send the message to
+     * @param placeholders the optional placeholders to be replaced in the message
+     */
+    public void send(@NotNull Audience audience, @Nullable String... placeholders) {
+        message.send(audience, placeholders);
     }
 
-    public <T extends Iterable<? extends CommandSender>> void send(T iterable, @Nullable String... placeholders) {
-        for (CommandSender sender : iterable) {
-            send(sender, placeholders);
-        }
+    /**
+     * Sends a message to a collection of audiences.
+     *
+     * @param iterable the collection of audiences to send the message to
+     * @param <T> the type of iterable must extend Iterable<? extends Audience>
+     * @throws NullPointerException if the iterable is null
+     */
+    public <T extends Iterable<? extends Audience>> void send(T iterable) {
+        message.send(iterable);
     }
 
+    /**
+     * Broadcasts a message to all players on the server.
+     *
+     * @param placeholders an array of optional placeholders to replace in the message (nullable)
+     */
     public void broadcast(@Nullable String... placeholders) {
-        send(Bukkit.getOnlinePlayers(), placeholders);
+        message.broadcast(placeholders);
     }
 
 }

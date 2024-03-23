@@ -4,6 +4,7 @@ import games.negative.alumina.logger.Logs;
 import games.negative.alumina.message.Message;
 import games.negative.plugin.Plugin;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.Component;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
@@ -94,6 +95,16 @@ public enum Locale {
     }
 
     /**
+     * Sends a message to a collection of audiences with optional placeholders.
+     * @param iterable the collection of audiences to send the message to
+     * @param placeholders the optional placeholders to be replaced in the message
+     * @param <T> the type of iterable must extend Iterable<? extends Audience>
+     */
+    public <T extends Iterable<? extends Audience>> void send(@NotNull T iterable, @Nullable String... placeholders) {
+        message.send(iterable, placeholders);
+    }
+
+    /**
      * Broadcasts a message to all players on the server.
      *
      * @param placeholders an array of optional placeholders to replace in the message (nullable)
@@ -102,4 +113,23 @@ public enum Locale {
         message.broadcast(placeholders);
     }
 
+    /**
+     * Broadcasts a message to all players on the server with optional placeholders.
+     * @param audience the audience to broadcast the message to
+     * @param placeholders the optional placeholders to be replaced in the message
+     */
+    public void broadcast(@Nullable Audience audience, @Nullable String... placeholders) {
+        message.broadcast(audience, placeholders);
+    }
+
+    /**
+     * Returns the message as a component.
+     * @param audience the audience to send the message to
+     * @param placeholders the optional placeholders to be replaced in the message
+     * @return the message as a component
+     */
+    @NotNull
+    public Component asComponent(@Nullable Audience audience, @Nullable String... placeholders) {
+        return message.asComponent(audience, placeholders);
+    }
 }
